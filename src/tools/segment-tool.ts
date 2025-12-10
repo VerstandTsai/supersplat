@@ -49,6 +49,21 @@ class SegmentTool {
             const imageData = context.createImageData(canvas.width, canvas.height);
             imageData.data.set(data);
             context.putImageData(imageData, 0, 0);
+
+            const formData = new FormData();
+            formData.append('x0', area.start.x.toString());
+            formData.append('y0', area.start.y.toString());
+            formData.append('x1', area.end.x.toString());
+            formData.append('y1', area.end.y.toString());
+            formData.append('width', canvas.width.toString());
+            formData.append('height', canvas.height.toString());
+            formData.append('rendering', new Blob([data]), 'data.bin');
+            const res = await fetch('http://localhost:5000', {
+                method: 'POST',
+                body: formData
+            });
+            const resjson = await res.json()
+            console.log(resjson);
         };
 
         const pointerdown = (e: PointerEvent) => {
