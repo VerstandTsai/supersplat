@@ -34,7 +34,7 @@ class SegmentTool {
             rect.setAttribute('height', height.toString());
         };
 
-        const segment = (area: Rectangle) => {
+        const segment = async (area: Rectangle) => {
             const { canvas, context } = mask;
 
             if (canvas.width !== parent.clientWidth || canvas.height !== parent.clientHeight) {
@@ -44,6 +44,11 @@ class SegmentTool {
 
             // clear canvas
             context.clearRect(0, 0, canvas.width, canvas.height);
+
+            const data = await events.invoke('render.offscreen', canvas.width, canvas.height);
+            const imageData = context.createImageData(canvas.width, canvas.height);
+            imageData.data.set(data);
+            context.putImageData(imageData, 0, 0);
         };
 
         const pointerdown = (e: PointerEvent) => {
@@ -54,8 +59,11 @@ class SegmentTool {
                 dragId = e.pointerId;
                 parent.setPointerCapture(dragId);
 
-                start.x = end.x = e.offsetX;
-                start.y = end.y = e.offsetY;
+                const center = { x: parent.clientWidth / 2, y: parent.clientHeight / 2 };
+                start.x = 2 * center.x - e.offsetX;
+                start.y = 2 * center.y - e.offsetY;
+                end.x = e.offsetX;
+                end.y = e.offsetY;
 
                 updateRect();
 
@@ -68,6 +76,9 @@ class SegmentTool {
                 e.preventDefault();
                 e.stopPropagation();
 
+                const center = { x: parent.clientWidth / 2, y: parent.clientHeight / 2 };
+                start.x = 2 * center.x - e.offsetX;
+                start.y = 2 * center.y - e.offsetY;
                 end.x = e.offsetX;
                 end.y = e.offsetY;
 
@@ -86,20 +97,19 @@ class SegmentTool {
                 e.preventDefault();
                 e.stopPropagation();
 
-                const w = parent.clientWidth;
-                const h = parent.clientHeight;
-
                 dragEnd();
 
                 // rect select
                 segment({
-                    start: { x: Math.min(start.x, end.x) / w, y: Math.min(start.y, end.y) / h },
-                    end: { x: Math.max(start.x, end.x) / w, y: Math.max(start.y, end.y) / h }
+                    start: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) },
+                    end: { x: Math.max(start.x, end.x), y: Math.max(start.y, end.y) }
                 });
             }
         };
 
         this.activate = () => {
+            const cameraPose = events.invoke('camera.getPose');
+            events.fire('camera.setPose', { position: cameraPose.position, target: { x: 0, y: 0, z: 0 } });
             parent.style.display = 'block';
             parent.addEventListener('pointerdown', pointerdown);
             parent.addEventListener('pointermove', pointermove);
