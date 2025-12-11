@@ -18,6 +18,9 @@ class SegmentTool {
         const rect = document.createElementNS(svg.namespaceURI, 'rect') as SVGRectElement;
         svg.appendChild(rect);
 
+        // create canvas
+        const { canvas, context } = mask;
+
         const start = { x: 0, y: 0 };
         const end = { x: 0, y: 0 };
         let dragId: number | undefined;
@@ -34,17 +37,8 @@ class SegmentTool {
             rect.setAttribute('height', height.toString());
         };
 
-        const segment = async (area: Rectangle) => {
-            const { canvas, context } = mask;
-
-            if (canvas.width !== parent.clientWidth || canvas.height !== parent.clientHeight) {
-                canvas.width = parent.clientWidth;
-                canvas.height = parent.clientHeight;
-            }
-
-            // clear canvas
+        const denoise = async (area: Rectangle) => {
             context.clearRect(0, 0, canvas.width, canvas.height);
-
             const data = await events.invoke('render.offscreen', canvas.width, canvas.height);
             const formData = new FormData();
             formData.append('x0', area.start.x.toFixed(0));
@@ -63,6 +57,34 @@ class SegmentTool {
             const imageData = context.createImageData(canvas.width, canvas.height);
             imageData.data.set(maskImage);
             context.putImageData(imageData, 0, 0);
+            events.fire('select.byMask', 'add', canvas, context);
+            events.fire('select.invert');
+            events.fire('select.delete');
+        };
+
+        const segment = async (area: Rectangle, n: number) => {
+            if (canvas.width !== parent.clientWidth || canvas.height !== parent.clientHeight) {
+                canvas.width = parent.clientWidth;
+                canvas.height = parent.clientHeight;
+            }
+            const pose = events.invoke('camera.getPose');
+            const x = pose.position.x;
+            const y = pose.position.y;
+            const z = pose.position.z;
+            const r = Math.hypot(x, z);
+            const t = Math.atan2(x, z);
+            const dt = 2 * Math.PI / n;
+            for (let i = 0; i < n; i++) {
+                events.fire('camera.setPose', {
+                    position: {
+                        x: r * Math.sin(t + i*dt),
+                        y: y,
+                        z: r * Math.cos(t + i*dt)
+                    },
+                    target: { x: 0, y: 0, z: 0 }
+                });
+                await denoise(area);
+            }
         };
 
         const pointerdown = (e: PointerEvent) => {
@@ -117,13 +139,13 @@ class SegmentTool {
                 segment({
                     start: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) },
                     end: { x: Math.max(start.x, end.x), y: Math.max(start.y, end.y) }
-                });
+                }, 8);
             }
         };
 
         this.activate = () => {
-            const cameraPose = events.invoke('camera.getPose');
-            events.fire('camera.setPose', { position: cameraPose.position, target: { x: 0, y: 0, z: 0 } });
+            const pose = events.invoke('camera.getPose');
+            events.fire('camera.setPose', { position: pose.position, target: { x: 0, y: 0, z: 0 } });
             parent.style.display = 'block';
             parent.addEventListener('pointerdown', pointerdown);
             parent.addEventListener('pointermove', pointermove);
