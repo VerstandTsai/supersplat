@@ -46,15 +46,11 @@ class SegmentTool {
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             const data = await events.invoke('render.offscreen', canvas.width, canvas.height);
-            const imageData = context.createImageData(canvas.width, canvas.height);
-            imageData.data.set(data);
-            context.putImageData(imageData, 0, 0);
-
             const formData = new FormData();
-            formData.append('x0', area.start.x.toString());
-            formData.append('y0', area.start.y.toString());
-            formData.append('x1', area.end.x.toString());
-            formData.append('y1', area.end.y.toString());
+            formData.append('x0', area.start.x.toFixed(0));
+            formData.append('y0', area.start.y.toFixed(0));
+            formData.append('x1', area.end.x.toFixed(0));
+            formData.append('y1', area.end.y.toFixed(0));
             formData.append('width', canvas.width.toString());
             formData.append('height', canvas.height.toString());
             formData.append('rendering', new Blob([data]), 'data.bin');
@@ -62,8 +58,11 @@ class SegmentTool {
                 method: 'POST',
                 body: formData
             });
-            const resjson = await res.json()
-            console.log(resjson);
+            const blob = await res.blob();
+            const maskImage = await blob.bytes();
+            const imageData = context.createImageData(canvas.width, canvas.height);
+            imageData.data.set(maskImage);
+            context.putImageData(imageData, 0, 0);
         };
 
         const pointerdown = (e: PointerEvent) => {
