@@ -52,7 +52,7 @@ class FilterTool {
         const arrayMinMax = (arr: Array<number>) => {
             const min = arr.reduce((p, v) => (p < v ? p : v));
             const max = arr.reduce((p, v) => (p > v ? p : v));
-            return [ min, max ];
+            return [min, max];
         };
 
         const getBoundingBox = (splat: Splat) => {
@@ -60,9 +60,9 @@ class FilterTool {
             const xs = splatData.getProp('x');
             const ys = splatData.getProp('y');
             const zs = splatData.getProp('z');
-            const [ minX, maxX ] = arrayMinMax(xs as unknown as Array<number>);
-            const [ minY, maxY ] = arrayMinMax(ys as unknown as Array<number>);
-            const [ minZ, maxZ ] = arrayMinMax(zs as unknown as Array<number>);
+            const [minX, maxX] = arrayMinMax(xs as unknown as Array<number>);
+            const [minY, maxY] = arrayMinMax(ys as unknown as Array<number>);
+            const [minZ, maxZ] = arrayMinMax(zs as unknown as Array<number>);
             return {
                 start: { x: minX, y: minY, z: minZ },
                 end: { x: maxX, y: maxY, z: maxZ }
@@ -70,7 +70,7 @@ class FilterTool {
         };
 
         const getBin = (x: number, min: number, max: number, n: number) => {
-            return x == max ? n - 1 : Math.floor((x - min) / (max - min) * n);
+            return x === max ? n - 1 : Math.floor((x - min) / (max - min) * n);
         };
 
         const getBin3 = (splat: Splat, i: number, boundingBox: Box, n: number) => {
@@ -81,13 +81,13 @@ class FilterTool {
             const ix = getBin(xs[i], boundingBox.start.x, boundingBox.end.x, n);
             const iy = getBin(ys[i], boundingBox.start.y, boundingBox.end.y, n);
             const iz = getBin(zs[i], boundingBox.start.z, boundingBox.end.z, n);
-            return [ ix, iy, iz ];
+            return [ix, iy, iz];
         };
 
         const getDensities = (splat: Splat, boundingBox: Box, n: number) => {
             const densities = Array.from(Array(n), () => Array.from(Array(n), () => new Array(n).fill(0)));
             for (let i = 0; i < splat.numSplats; i++) {
-                const [ ix, iy, iz ] = getBin3(splat, i, boundingBox, n);
+                const [ix, iy, iz] = getBin3(splat, i, boundingBox, n);
                 densities[ix][iy][iz]++;
             }
             return densities;
@@ -115,9 +115,9 @@ class FilterTool {
             const maxDensity = getMaxDensity(densities, n);
             const filter = (i: number) => {
                 const opacity = 1 / (1 + Math.exp(-opacities[i]));
-                const [ ix, iy, iz ] = getBin3(splat, i, boundingBox, n);
+                const [ix, iy, iz] = getBin3(splat, i, boundingBox, n);
                 return opacity < opacityThreshold || densities[ix][iy][iz] / maxDensity < densityThreshold;
-            }
+            };
             events.fire('edit.add', new SelectOp(splat, 'set', filter));
         };
 
