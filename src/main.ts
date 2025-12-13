@@ -243,7 +243,7 @@ const main = async () => {
     toolManager.register('sphereSelection', new SphereSelection(events, scene, editorUI.canvasContainer));
     toolManager.register('boxSelection', new BoxSelection(events, scene, editorUI.canvasContainer));
     toolManager.register('eyedropperSelection', new EyedropperSelection(events, editorUI.toolsContainer.dom, editorUI.canvasContainer));
-    toolManager.register('segmentTool', new SegmentTool(events, editorUI.toolsContainer.dom, mask));
+    toolManager.register('segmentTool', new SegmentTool(events, editorUI.toolsContainer.dom, mask, editorUI.canvasContainer));
     toolManager.register('move', new MoveTool(events, scene));
     toolManager.register('rotate', new RotateTool(events, scene));
     toolManager.register('scale', new ScaleTool(events, scene));

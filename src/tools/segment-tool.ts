@@ -1,3 +1,4 @@
+import { Container, NumericInput } from '@playcanvas/pcui';
 import { Events } from '../events';
 
 type Point = { x: number, y: number };
@@ -7,12 +8,35 @@ class SegmentTool {
     activate: () => void;
     deactivate: () => void;
 
-    constructor(events: Events, parent: HTMLElement, mask: { canvas: HTMLCanvasElement, context: CanvasRenderingContext2D }) {
+    constructor(events: Events, parent: HTMLElement, mask: { canvas: HTMLCanvasElement, context: CanvasRenderingContext2D }, canvasContainer: Container) {
         // create svg
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.classList.add('tool-svg', 'hidden');
         svg.id = 'segment-tool-svg';
         parent.appendChild(svg);
+
+        let nAngles = 1;
+
+        // ui
+        const selectToolbar = new Container({
+            class: 'select-toolbar',
+            hidden: true
+        });
+
+        const nAnglesInput = new NumericInput({
+            value: nAngles,
+            placeholder: '# of angles',
+            width: 120,
+            precision: 0,
+            min: 1,
+            max: 8
+        });
+        selectToolbar.append(nAnglesInput);
+        canvasContainer.append(selectToolbar);
+
+        nAnglesInput.on('change', () => {
+            nAngles = nAnglesInput.value;
+        });
 
         // create rect element
         const rect = document.createElementNS(svg.namespaceURI, 'rect') as SVGRectElement;
@@ -62,7 +86,7 @@ class SegmentTool {
             events.fire('select.delete');
         };
 
-        const segment = async (area: Rectangle, n: number) => {
+        const segment = async (area: Rectangle) => {
             if (canvas.width !== parent.clientWidth || canvas.height !== parent.clientHeight) {
                 canvas.width = parent.clientWidth;
                 canvas.height = parent.clientHeight;
@@ -73,8 +97,8 @@ class SegmentTool {
             const z = pose.position.z;
             const r = Math.hypot(x, z);
             const t = Math.atan2(x, z);
-            const dt = 2 * Math.PI / n;
-            for (let i = 0; i < n; i++) {
+            const dt = 2 * Math.PI / nAngles;
+            for (let i = 0; i < nAngles; i++) {
                 events.fire('camera.setPose', {
                     position: {
                         x: r * Math.sin(t + i * dt),
@@ -139,17 +163,19 @@ class SegmentTool {
                 segment({
                     start: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) },
                     end: { x: Math.max(start.x, end.x), y: Math.max(start.y, end.y) }
-                }, 3);
+                });
             }
         };
 
         this.activate = () => {
             const pose = events.invoke('camera.getPose');
             events.fire('camera.setPose', { position: pose.position, target: { x: 0, y: 0, z: 0 } });
+            events.fire('camera.setMode', 'centers');
             parent.style.display = 'block';
             parent.addEventListener('pointerdown', pointerdown);
             parent.addEventListener('pointermove', pointermove);
             parent.addEventListener('pointerup', pointerup);
+            selectToolbar.hidden = false;
         };
 
         this.deactivate = () => {
@@ -160,6 +186,7 @@ class SegmentTool {
             parent.removeEventListener('pointerdown', pointerdown);
             parent.removeEventListener('pointermove', pointermove);
             parent.removeEventListener('pointerup', pointerup);
+            selectToolbar.hidden = true;
         };
     }
 
