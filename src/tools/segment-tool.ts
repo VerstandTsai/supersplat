@@ -1,4 +1,5 @@
 import { Container, NumericInput } from '@playcanvas/pcui';
+
 import { Events } from '../events';
 
 type Point = { x: number, y: number };
