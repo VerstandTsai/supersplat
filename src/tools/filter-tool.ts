@@ -1,8 +1,8 @@
 import { Container, NumericInput } from '@playcanvas/pcui';
 
+import { SelectOp } from '../edit-ops';
 import { Events } from '../events';
 import { Splat } from '../splat';
-import { SelectOp } from '../edit-ops';
 
 type Point = { x: number, y: number, z: number };
 type Box = { start: Point, end: Point };
