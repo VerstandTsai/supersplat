@@ -77,9 +77,9 @@ class SegmentTool {
             for (let i = 0; i < n; i++) {
                 events.fire('camera.setPose', {
                     position: {
-                        x: r * Math.sin(t + i*dt),
+                        x: r * Math.sin(t + i * dt),
                         y: y,
-                        z: r * Math.cos(t + i*dt)
+                        z: r * Math.cos(t + i * dt)
                     },
                     target: { x: 0, y: 0, z: 0 }
                 });
