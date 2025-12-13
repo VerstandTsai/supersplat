@@ -57,7 +57,7 @@ class SegmentTool {
             const imageData = context.createImageData(canvas.width, canvas.height);
             imageData.data.set(maskImage);
             context.putImageData(imageData, 0, 0);
-            events.fire('select.byMask', 'add', canvas, context);
+            events.fire('select.byMask', 'set', canvas, context);
             events.fire('select.invert');
             events.fire('select.delete');
         };
@@ -139,7 +139,7 @@ class SegmentTool {
                 segment({
                     start: { x: Math.min(start.x, end.x), y: Math.min(start.y, end.y) },
                     end: { x: Math.max(start.x, end.x), y: Math.max(start.y, end.y) }
-                }, 8);
+                }, 3);
             }
         };
 
