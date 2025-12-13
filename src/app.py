@@ -12,19 +12,19 @@ class Segmentor:
         self.predictor = SAM2ImagePredictor(build_sam2(
             "configs/sam2.1/sam2.1_hiera_l.yaml",
             "../sam2/checkpoints/sam2.1_hiera_large.pt",
-            device=torch.device("cuda:2")
+            device=torch.device("cuda:0")
         ))
 
     def get_mask(self, image: np.ndarray, box: np.ndarray) -> np.ndarray:
         self.predictor.set_image(image)
         with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
-            masks, _, _ = self.predictor.predict(box=box[None, :], multimask_output=False)
+            masks, score, _ = self.predictor.predict(box=box[None, :], multimask_output=False)
+        print(score)
         return masks[0]
 
 def color_mask(mask: np.ndarray, color: np.ndarray) -> np.ndarray:
-    h, w = mask.shape[-2:]
-    mask = mask.astype(np.uint8)
-    mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
+    h, w = mask.shape
+    mask_image = mask.astype(np.uint8).reshape(h, w, 1) * color.astype(np.uint8).reshape(1, 1, -1)
     return mask_image
 
 def show_box(box: np.ndarray, ax) -> None:
@@ -46,8 +46,14 @@ def root():
     data = request.files['rendering'].read()
     image = np.array(Image.frombytes('RGBA', size, data).convert('RGB'))
 
-    mask = seg.get_mask(image, box)
-    mask_image = color_mask(mask, np.array([255, 102, 0, 255], dtype=np.uint8))
+    n = 8
+    mask = np.zeros(image.shape[:2])
+    for _ in range(n):
+        noise = np.random.randint(0, 16, size=image.shape, dtype=np.uint8)
+        mask += seg.get_mask(np.bitwise_xor(image, noise), box)
+    mask = np.round(mask / n)
+    mask_image = color_mask(mask, np.array([255, 102, 0, 255]))
+
     response = make_response(mask_image.tobytes())
     response.headers.set('Content-Type', 'application/octet-stream')
     response.headers.set('Access-Control-Allow-Origin', '*')
