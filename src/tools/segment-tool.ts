@@ -78,7 +78,8 @@ class SegmentTool {
                 body: formData
             });
             const blob = await res.blob();
-            const maskImage = await blob.bytes();
+            const arrayBuffer = await blob.arrayBuffer();
+            const maskImage = new Uint8Array(arrayBuffer);
             const imageData = context.createImageData(canvas.width, canvas.height);
             imageData.data.set(maskImage);
             context.putImageData(imageData, 0, 0);
